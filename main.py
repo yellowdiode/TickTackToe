@@ -1,11 +1,15 @@
 import turtle as t
 import math as m
+import time
 
 SQUARE_LEN = 150
 START_X = -250
 START_Y = -250
 
 X_OFFSET = 10
+
+board = None
+num_pieces = 0
 
 
 # =================================================
@@ -94,6 +98,15 @@ def draw_all_squares(board):
                 draw_square(x, y, shape)
 
 
+def convert_t_to_b_coordinates(x, y):
+    if START_X < x < START_X + 3 * SQUARE_LEN and START_Y < y < START_Y + 3 * SQUARE_LEN:
+        return int((x - START_X) / SQUARE_LEN), int((y - START_X) / SQUARE_LEN)
+
+    return None
+
+
+
+
 # =================================================
 # Board functions
 
@@ -138,66 +151,68 @@ def check_win_board(board):
 # =================================================
 # Game functions
 
+
 def run_game():
+    global board
+    global num_pieces
+
     # Make and draw the board
     board = make_board(3, 3)
     draw_board()
-    num_pieces = 0
-
-    # main game loop
-    while True:
-
-        # Ask current player for a move
-        if num_pieces % 2 == 0:
-            current_shape = "X"
-        else:
-            current_shape = "O"
-
-        print("\n\nPlayer {}".format(current_shape))
-        x = input("What x to put your piece in: ")
-        if x not in ["0", "1", "2"]:
-            print("That is not a valid x")
-            continue
-        x = int(x)
-        y = input("What y to put your piece in: ")
-        if y not in ["0", "1", "2"]:
-            print("That is not a valid y")
-            continue
-        y = int(y)
-
-        # Try to add piece to the board
-        if not update_board(board, x, y, current_shape):
-            print("That is not a valid move, please try again")
-            continue
-
-        # Draw the  piece
-        draw_square(x, y, current_shape)
-
-        # Check for win
-        winning_line = check_win_board(board)
-        if winning_line:
-            print("Game over. Player {} has won!".format(current_shape))
-
-            # Draw win line
-            draw_line(winning_line[0], winning_line[1], winning_line[2], winning_line[3])
-            break
-
-        # Switch to the next player
-        num_pieces += 1
-
-        # Check for draw
-        if num_pieces == 9:
-            print("There are no more spaces left on the board. It's a draw.")
-            break
+    t.onscreenclick(on_click_handle)
+    t.mainloop()
 
 
-    input("Press enter to exit this game")
+def on_click_handle(x, y):
+    cords = convert_t_to_b_coordinates(x, y)
+    if not cords:
+        print("That is not a place on the board")
+        return
+
+    x, y = cords
+    make_move(x, y)
+
+
+def make_move(x, y):
+    global board
+    global num_pieces
+
+    if num_pieces % 2 == 0:
+        current_shape = "X"
+    else:
+        current_shape = "O"
+
+    # Try to add piece to the board
+    if not update_board(board, x, y, current_shape):
+        print("That is not a valid move, please try again")
+        return
+
+    # Draw the  piece
+    draw_square(x, y, current_shape)
+
+    # Check for win
+    winning_line = check_win_board(board)
+    if winning_line:
+        # Draw win line
+        draw_line(winning_line[0], winning_line[1], winning_line[2], winning_line[3])
+        t.onscreenclick(None)
+        t.textinput("Game over! Player {} has won.".format(current_shape), "Press enter to exit this game")
+        exit()
+
+    # Switch to the next player
+    num_pieces += 1
+
+    # Check for draw
+    if num_pieces == 9:
+        t.onscreenclick(None)
+        t.textinput("Game over. It's a draw", "Press enter to exit this game")
+        exit()
+
+
 
 # ------------------------
 
 t.speed(10)
-
-
 
 
 run_game()
