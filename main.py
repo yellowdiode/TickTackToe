@@ -170,7 +170,9 @@ def on_click_handle(x, y):
         return
 
     x, y = cords
+    t.onscreenclick(None)
     make_move(x, y)
+    t.onscreenclick(on_click_handle)
 
 
 def make_move(x, y):
