@@ -1,15 +1,17 @@
 import turtle as t
 import math as m
-import time
+import random
+
 
 SQUARE_LEN = 150
 START_X = -250
 START_Y = -250
-
 X_OFFSET = 10
 
-board = None
-num_pieces = 0
+LINES = [(0, 0, 2, 0), (0, 1, 2, 1), (0, 2, 2, 2), (0, 2, 0, 0), (1, 2, 1, 0), (2, 2, 2, 0), (0, 0, 2, 2), (0, 2, 2, 0)]
+
+board_glob = None
+num_pieces_glob = 0
 
 
 # =================================================
@@ -142,22 +144,72 @@ def check_win_line(board, x1, y1, x2, y2):
 
 
 def check_win_board(board):
-    for line in [(0, 0, 2, 0), (0, 1, 2, 1), (0, 2, 2, 2), (0, 2, 0, 0), (1, 2, 1, 0), (2, 2, 2, 0), (0, 0, 2, 2), (0, 2, 2, 0)]:
+    for line in LINES:
         if check_win_line(board, line[0], line[1], line[2], line[3]):
             return line
     return None
 
 
 # =================================================
+# AI functions
+
+
+# ret: None, if no winning move
+# ret: ("Shape", x, y), if the winning move is placing the Shape at [x,y]
+def check_next_win_move(board, win_shape):
+    for line in LINES:
+        mid_x = int((line[0] + line[2]) / 2)
+        mid_y = int((line[1] + line[3]) / 2)
+
+        if winning_move_for_line(board, line[0], line[1], mid_x, mid_y, line[2], line[3]) == win_shape:
+            return line[0], line[1]
+
+        if winning_move_for_line(board, mid_x, mid_y, line[0], line[1], line[2], line[3]) == win_shape:
+            return mid_x, mid_y
+
+        if winning_move_for_line(board, line[2], line[3], mid_x, mid_y, line[0], line[1],) == win_shape:
+            return line[2], line[3]
+
+    return None
+
+
+# in: board and 6 board coordinates, which make up 3 points in a line on the board
+# ret: either, None if no player can win in that specific line, or which piece can win by going in x1, y1.
+def winning_move_for_line(board, x1, y1, x2, y2, x3, y3):
+    if board[x1][y1] is None and board[x2][y2] == board[x3][y3]:
+        return board[x2][y2]
+    return None
+
+
+def find_best_move(board, shape):
+    winning_move = check_next_win_move(board, shape)
+    if winning_move:
+        return winning_move
+
+    other_winning_move = check_next_win_move(board, "O" if shape == "X" else "X")
+    if other_winning_move:
+        return other_winning_move
+
+    return random_move(board)
+
+
+def random_move(board):
+    while True:
+        X = random.randint(0, 2)
+        Y = random.randint(0, 2)
+        if not board[X][Y]:
+            return X, Y
+
+
+# =================================================
 # Game functions
 
-
 def run_game():
-    global board
-    global num_pieces
+    global board_glob
+    global num_pieces_glob
 
     # Make and draw the board
-    board = make_board(3, 3)
+    board_glob = make_board(3, 3)
     draw_board()
     t.onscreenclick(on_click_handle)
     t.mainloop()
@@ -171,29 +223,31 @@ def on_click_handle(x, y):
 
     x, y = cords
     t.onscreenclick(None)
-    make_move(x, y)
+    if make_move(x, y):
+        x, y = find_best_move(board_glob, "O")
+        make_move(x, y)
     t.onscreenclick(on_click_handle)
 
 
 def make_move(x, y):
-    global board
-    global num_pieces
+    global board_glob
+    global num_pieces_glob
 
-    if num_pieces % 2 == 0:
+    if num_pieces_glob % 2 == 0:
         current_shape = "X"
     else:
         current_shape = "O"
 
     # Try to add piece to the board
-    if not update_board(board, x, y, current_shape):
+    if not update_board(board_glob, x, y, current_shape):
         print("That is not a valid move, please try again")
-        return
+        return False
 
     # Draw the  piece
     draw_square(x, y, current_shape)
 
     # Check for win
-    winning_line = check_win_board(board)
+    winning_line = check_win_board(board_glob)
     if winning_line:
         # Draw win line
         draw_line(winning_line[0], winning_line[1], winning_line[2], winning_line[3])
@@ -202,19 +256,25 @@ def make_move(x, y):
         exit()
 
     # Switch to the next player
-    num_pieces += 1
+    num_pieces_glob += 1
 
     # Check for draw
-    if num_pieces == 9:
+    if num_pieces_glob == 9:
         t.onscreenclick(None)
         t.textinput("Game over. It's a draw", "Press enter to exit this game")
         exit()
 
+    return True
 
 
 # ------------------------
 
 t.speed(10)
 
-
 run_game()
+
+# board = make_board_from_strings(["  O",
+#                                  "  O",
+#                                  "XX "])
+# print(check_next_win_move(board, "O"))
+
