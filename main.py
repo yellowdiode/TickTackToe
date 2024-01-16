@@ -211,8 +211,21 @@ def run_game():
     # Make and draw the board
     board_glob = make_board(3, 3)
     draw_board()
+    who_will_start = does_comp_start()
+    if who_will_start:
+        x, y = find_best_move(board_glob, "O")
+        make_move(x, y)
     t.onscreenclick(on_click_handle)
     t.mainloop()
+
+
+def does_comp_start():
+    while True:
+        who_starts = t.textinput("Who should start", "Press 1 to make the first move. Press 2 for the computer to start: ")
+        if who_starts == "2":
+            return True
+        elif who_starts == "1":
+            return False
 
 
 def on_click_handle(x, y):
